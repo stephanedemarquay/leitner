@@ -1,0 +1,75 @@
+════════════════════════════════════════════════════════════════
+  LEITNER EXPRESS — INSTALLATION SUR IPHONE (sans App Store)
+════════════════════════════════════════════════════════════════
+
+Ce dossier transforme votre bibliothèque en véritable application
+iPhone : icône sur l'écran d'accueil, plein écran sans barre
+Safari, et fonctionnement 100 % hors ligne après installation.
+
+────────────────────────────────────────────────────────────────
+ MÉTHODE RECOMMANDÉE — Hébergement gratuit + écran d'accueil
+────────────────────────────────────────────────────────────────
+Il faut mettre ces fichiers en ligne UNE SEULE FOIS (obligatoire
+pour que l'iPhone accepte le mode hors ligne). Deux options
+gratuites, au choix :
+
+▶ Option A — Netlify Drop (le plus simple, 2 minutes)
+  1. Sur un ordinateur, allez sur https://app.netlify.com/drop
+  2. Créez un compte gratuit si demandé.
+  3. Glissez-déposez LE DOSSIER ENTIER (les 7 fichiers) sur la page.
+  4. Netlify vous donne une adresse du type
+     https://votre-nom.netlify.app — c'est votre application.
+
+▶ Option B — GitHub Pages
+  1. Créez un compte sur https://github.com puis un dépôt
+     public nommé par exemple « leitner ».
+  2. Téléversez les 7 fichiers du dossier (bouton « Add file →
+     Upload files »).
+  3. Dans Settings → Pages, choisissez « Deploy from a branch »,
+     branche main, dossier racine. Votre adresse sera
+     https://votre-pseudo.github.io/leitner/
+
+Puis, SUR L'IPHONE :
+  5. Ouvrez l'adresse dans SAFARI (pas Chrome).
+  6. Touchez le bouton Partager (carré avec flèche) puis
+     « Sur l'écran d'accueil » et validez.
+  7. Une icône « Leitner » apparaît. Ouvrez-la : l'application
+     s'affiche en plein écran. Après ce premier lancement,
+     elle fonctionne SANS INTERNET (avion, métro...).
+
+Vous seul connaissez l'adresse ; vous pouvez aussi la partager
+avec vos proches, qui l'installeront de la même façon.
+
+────────────────────────────────────────────────────────────────
+ MÉTHODE SANS AUCUN HÉBERGEMENT (dépannage)
+────────────────────────────────────────────────────────────────
+Envoyez simplement le fichier index.html sur l'iPhone (AirDrop,
+Mail, iCloud Drive). Ouvrez-le depuis l'app Fichiers : il se
+lance dans un aperçu Safari et tout fonctionne, y compris la
+sauvegarde. Limites : pas d'icône dédiée, pas de plein écran.
+L'app « Documents » (Readdle, gratuite) offre un meilleur confort
+pour ouvrir des fichiers HTML locaux.
+
+────────────────────────────────────────────────────────────────
+ VOS DONNÉES
+────────────────────────────────────────────────────────────────
+• La progression est enregistrée DANS le téléphone (rien ne part
+  sur Internet).
+• Pensez de temps en temps à « 💾 Exporter » (menu de la
+  bibliothèque) pour garder une sauvegarde de votre progression,
+  réimportable sur n'importe quel appareil.
+• Astuce iPhone : ouvrez l'application au moins une fois par
+  semaine ; Safari peut purger les données des sites jamais
+  visités pendant très longtemps (les applications installées
+  sur l'écran d'accueil sont bien mieux protégées).
+
+────────────────────────────────────────────────────────────────
+ NOUVEAUTÉS DE CETTE VERSION IPHONE
+────────────────────────────────────────────────────────────────
+• Balayez la carte vers la DROITE = juste, vers la GAUCHE =
+  à revoir (après avoir affiché la réponse).
+• Touchez la carte pour révéler la réponse.
+• Affichage adapté à l'encoche et à la barre du bas de l'iPhone.
+
+Contenu du dossier : index.html (l'application), manifest.webmanifest,
+sw.js (cache hors ligne), icon-180/192/512.png, ce LISEZ-MOI.
