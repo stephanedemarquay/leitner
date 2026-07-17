@@ -73,3 +73,23 @@ pour ouvrir des fichiers HTML locaux.
 
 Contenu du dossier : index.html (l'application), manifest.webmanifest,
 sw.js (cache hors ligne), icon-180/192/512.png, ce LISEZ-MOI.
+
+────────────────────────────────────────────────────────────────
+ MISE À JOUR (version 2)
+────────────────────────────────────────────────────────────────
+Pour mettre à jour votre site GitHub : remplacez les fichiers
+index.html et sw.js par ces nouvelles versions (mêmes étapes
+« Add file → Upload files »). Sur l'iPhone, rouvrez ensuite
+l'application deux fois : la nouvelle version s'installe seule.
+
+Nouveautés v2 :
+• En PAYSAGE pendant une session : tout le côté gauche de
+  l'écran = « à revoir », tout le côté droit = « je savais »,
+  bouton 🔊 réécouter rond en bas au centre.
+• Mode « ▶️ Continu (audio) » (bouton Mode en bas) : les cartes
+  défilent et sont lues automatiquement (langue étrangère puis
+  français, ou l'inverse selon le sens choisi), sans toucher
+  l'écran et SANS rien enregistrer — la file de lecture part
+  bien de votre sauvegarde. Toucher la carte = pause / reprise.
+• Statistiques : nouveau graphique « Activité des 14 derniers
+  jours » (cartes vues et justes par jour).
