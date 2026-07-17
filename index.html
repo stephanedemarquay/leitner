@@ -184,6 +184,37 @@
     main{padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right)}
   }
   button, .chap, .face { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  /* ── zones d'appui plein écran en mode paysage ── */
+  .zone{display:none}
+  #zone-say{display:none}
+  @media (orientation: landscape){
+    body.in-game .zone{
+      display:flex; position:fixed; top:0; bottom:0; width:50vw; z-index:40;
+      align-items:center; padding:0 12px; user-select:none; -webkit-user-select:none;
+    }
+    body.in-game #zone-left{ left:0; justify-content:flex-start;
+      background:linear-gradient(to right, rgba(226,106,106,.16), rgba(226,106,106,0) 40%); }
+    body.in-game #zone-right{ right:0; justify-content:flex-end;
+      background:linear-gradient(to left, rgba(143,211,154,.18), rgba(143,211,154,0) 40%); }
+    body.in-game .zone .zlab{
+      font-size:1.02rem; color:var(--chalk-dim); opacity:.75; letter-spacing:.02em;
+      writing-mode:vertical-rl; text-orientation:mixed; max-height:70vh;
+      display:flex; align-items:center; gap:8px;
+    }
+    body.in-game #zone-left .zlab{ transform:rotate(180deg); }
+    body.in-game #zone-say{
+      display:flex; position:fixed; left:50%; bottom:calc(8px + env(safe-area-inset-bottom));
+      transform:translateX(-50%); z-index:45; width:64px; height:64px; border-radius:50%;
+      background:var(--gold); color:#2B2313; border:none; font-size:1.5rem;
+      align-items:center; justify-content:center; box-shadow:0 3px 12px rgba(0,0,0,.35);
+    }
+    body.in-game #keys{ visibility:hidden; }
+    body.in-game header{ position:relative; z-index:60; }
+  }
+  #flow-chip{position:fixed; top:calc(8px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+    z-index:70; background:var(--gold); color:#2B2313; font-size:.8rem; padding:4px 12px;
+    border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.3); display:none}
+  body.flow-paused #flow-chip{display:block}
   html { -webkit-text-size-adjust: 100%; }
 </style>
 </head>
@@ -243,6 +274,10 @@
         </div>
       </div>
     </div>
+    <div class="zone" id="zone-left"><span class="zlab">↩ retourner vers la gauche — à revoir</span></div>
+    <div class="zone" id="zone-right"><span class="zlab">retourner vers la droite — je savais ✓</span></div>
+    <button id="zone-say" title="Réécouter">🔊</button>
+    <div id="flow-chip">⏸ pause — touchez la carte pour reprendre</div>
     <div id="keys">
       <button class="key ko" id="k-left"><span class="cap">←</span><span id="k-left-lab">retourner</span></button>
       <button class="key" id="k-say" title="Réécouter la prononciation"><span class="cap">🔊</span><span>réécouter</span></button>
@@ -285,6 +320,10 @@
     <div class="panel">
       <h3>Évolution du score (% par session)</h3>
       <div id="histo"></div>
+    </div>
+    <div class="panel">
+      <h3>Activité des 14 derniers jours (cartes vues / justes)</h3>
+      <div id="daily"></div>
     </div>
     <div class="panel">
       <h3>Répartition par boîte (tous chapitres)</h3>
@@ -448,6 +487,8 @@ function tally(courseOnly){
 /* ---------- écrans ---------- */
 function show(name){
   screen = name;
+  document.body.classList.toggle('in-game', name==='game');
+  if (name!=='game') stopFlow();
   for (const s of ['lib','game','end','stats','conj']) $(s).classList.toggle('hidden', s!==name);
   $('hud-chap-wrap').classList.toggle('hidden', name==='lib' || name==='stats' || name==='conj');
   if (name!=='game') hush();
@@ -501,6 +542,57 @@ function startSession(ch){
   qi = 0; good = 0;
   $('hud-chap').textContent = CHAP[cur].name;
   show('game'); paintCard(true);
+  if (S.mode==='flow') startFlow();
+}
+
+/* ── mode continu : lecture audio automatique, sans aucun enregistrement ──
+   La file part de la sauvegarde (cartes dues + nouvelles) mais rien n'est écrit. */
+let flowT = null, flowOn = false, flowPaused = false;
+function flowDur(txt){
+  const base = 1500 + 95 * String(txt||'').length;
+  const k = (S.rate==='slow') ? 1.45 : 1;
+  return Math.max(1900, Math.min(8000, base * k));
+}
+function startFlow(){
+  flowOn = true; flowPaused = false;
+  document.body.classList.remove('flow-paused');
+  flowFront();
+}
+function stopFlow(){
+  flowOn = false; clearTimeout(flowT);
+  document.body.classList.remove('flow-paused');
+}
+function flowFront(){
+  if (!flowOn || flowPaused || screen!=='game') return;
+  const it = CHAP[cur].items[queue[qi]];
+  const dir = effDir();
+  const front = dir==='enfr' ? it[0] : it[1];
+  clearTimeout(flowT);
+  flowT = setTimeout(flowBack, flowDur(front));
+}
+function flowBack(){
+  if (!flowOn || flowPaused || screen!=='game') return;
+  reveal();
+  const it = CHAP[cur].items[queue[qi]];
+  const dir = effDir();
+  const back = dir==='enfr' ? it[1] : it[0];
+  clearTimeout(flowT);
+  flowT = setTimeout(flowAdvance, flowDur(back));
+}
+function flowAdvance(){
+  if (!flowOn || flowPaused || screen!=='game') return;
+  qi++;
+  if (qi >= queue.length){ queue = buildQueue(cur); qi = 0;
+    if (!queue.length){ stopFlow(); refreshLib(); show('lib'); return; } }
+  paintCard();
+  flowFront();
+}
+function flowToggle(){
+  if (!flowOn) return;
+  flowPaused = !flowPaused;
+  document.body.classList.toggle('flow-paused', flowPaused);
+  if (flowPaused) { clearTimeout(flowT); hush(); }
+  else { revealed ? flowBack() : flowFront(); }
 }
 function paintCard(){
   const c = CHAP[cur], idx = queue[qi], [en, fr] = c.items[idx];
@@ -511,8 +603,10 @@ function paintCard(){
   revealed = false; busy = false;
   const card = $('card');
   card.className = 'in';
-  $('f-tag').textContent = (st ? 'boîte ' + box : 'nouvelle carte') + ' · ' +
-                           (ear ? "à l'oreille 🔊" : (dir==='enfr' ? FNAME() : 'français'));
+  $('f-tag').textContent = S.mode==='flow'
+      ? '▶️ continu · sans enregistrement · ' + (dir==='enfr' ? FNAME() + ' → français' : 'français → ' + FNAME())
+      : (st ? 'boîte ' + box : 'nouvelle carte') + ' · ' +
+        (ear ? "à l'oreille 🔊" : (dir==='enfr' ? FNAME() : 'français'));
   const fw = $('f-word'), bw = $('b-word');
   if (ear){ fw.textContent = '🔊'; fw.className = 'word ear'; }
   else { fw.textContent = q; fw.className = 'word' + (q.length > 26 ? ' long' : ''); }
@@ -549,6 +643,7 @@ function reveal(){
   $('k-right').classList.remove('neutral'); $('k-right').classList.add('ok','active');
 }
 function judge(ok){
+  if (S.mode==='flow') return;    // mode continu : aucune écriture
   if (busy) return; busy = true;
   const idx = queue[qi], key = cur + ':' + idx;
   const st = S.w[key], box = st ? st[0] : 1;
@@ -596,6 +691,43 @@ function endSession(){
 
 /* ---------- stats ---------- */
 function refreshStats(){
+  /* activité des 14 derniers jours */
+  const dEl = $('daily'); dEl.innerHTML = '';
+  const byDay = {};
+  for (const s of S.sessions){ const e = byDay[s.d] || (byDay[s.d] = {t:0, g:0}); e.t += s.t; e.g += s.g; }
+  const days14 = [];
+  for (let i = 13; i >= 0; i--){
+    const dt = new Date(Date.now() - i * 86400000);
+    days14.push(dt.toISOString().slice(0, 10));
+  }
+  const maxT = Math.max(10, ...days14.map(d => (byDay[d] || {t:0}).t));
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:flex-end;gap:4px;height:110px';
+  for (const d of days14){
+    const e = byDay[d] || {t:0, g:0};
+    const col = document.createElement('div');
+    col.style.cssText = 'flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%';
+    const bar = document.createElement('div');
+    bar.style.cssText = 'width:100%;max-width:26px;border-radius:4px 4px 0 0;background:#3B505E;position:relative;overflow:hidden;height:' +
+      Math.round(90 * e.t / maxT) + 'px;min-height:' + (e.t ? 4 : 1) + 'px';
+    if (e.t){
+      const g = document.createElement('div');
+      g.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:#8FD3A0;height:' + Math.round(100 * e.g / e.t) + '%';
+      bar.appendChild(g);
+    }
+    const lab = document.createElement('span');
+    lab.style.cssText = 'font-size:.58rem;color:var(--chalk-dim)';
+    lab.textContent = d.slice(8, 10) + '/' + d.slice(5, 7);
+    col.appendChild(bar); col.appendChild(lab);
+    wrap.appendChild(col);
+  }
+  dEl.appendChild(wrap);
+  const tot14 = days14.reduce((a, d) => a + (byDay[d] || {t:0}).t, 0);
+  const leg = document.createElement('div');
+  leg.style.cssText = 'font-size:.78rem;color:var(--chalk-dim);margin-top:8px';
+  leg.textContent = tot14 + ' cartes vues sur 14 jours · vert = réponses justes';
+  dEl.appendChild(leg);
+
   const h = $('histo'); h.innerHTML='';
   const last = S.sessions.slice(-30);
   if (!last.length) h.innerHTML = '<span style="color:var(--chalk-dim);font-size:.85rem">Jouez une première session pour voir la courbe.</span>';
@@ -662,9 +794,11 @@ $('btn-sound-fr').onclick = ()=>{
   $('btn-sound-fr').textContent = S.soundFr ? '🔊 Voix FR : activée' : '🔇 Voix FR : coupée';
   scheduleSave(true);
 };
+const modeLabel = ()=> S.mode==='audio' ? "👂 Mode : À l'oreille" :
+                      S.mode==='flow'  ? "▶️ Mode : Continu (audio)" : '👁 Mode : Classique';
 $('btn-mode').onclick = ()=>{
-  S.mode = S.mode==='classic' ? 'audio' : 'classic';
-  $('btn-mode').textContent = S.mode==='classic' ? '👁 Mode : Classique' : "👂 Mode : À l'oreille";
+  S.mode = S.mode==='classic' ? 'audio' : (S.mode==='audio' ? 'flow' : 'classic');
+  $('btn-mode').textContent = modeLabel();
   scheduleSave(true);
 };
 /* ---------- Bescherelle ---------- */
@@ -726,7 +860,14 @@ $('btn-next').onclick = ()=>startSession();
 $('btn-lib').onclick  = ()=>{ refreshLib(); show('lib'); };
 $('k-left').onclick  = ()=>{ if(screen!=='game'||busy)return; revealed ? judge(false) : reveal(); };
 $('k-right').onclick = ()=>{ if(screen!=='game'||busy)return; revealed ? judge(true)  : reveal(); };
-$('card').onclick    = ()=>{ if(screen==='game' && !revealed && !busy) reveal(); };
+$('card').onclick    = ()=>{
+  if (screen!=='game') return;
+  if (S.mode==='flow'){ flowToggle(); return; }   // en continu : la carte met en pause / reprend
+  if (!revealed && !busy) reveal();
+};
+$('zone-left').onclick  = ()=>{ if(screen!=='game')return; if(S.mode==='flow'){flowToggle();return;} $('k-left').click(); };
+$('zone-right').onclick = ()=>{ if(screen!=='game')return; if(S.mode==='flow'){flowToggle();return;} $('k-right').click(); };
+$('zone-say').onclick   = (e)=>{ e.stopPropagation(); $('k-say').click(); };
 $('btn-stats').onclick = ()=>{ refreshStats(); show('stats'); };
 $('btn-back').onclick  = ()=>{ refreshLib(); show('lib'); };
 $('btn-dir').onclick = ()=>{
@@ -783,7 +924,7 @@ window.addEventListener('beforeunload', ()=>{ try{ store.set(S); }catch(e){} });
   $('btn-rate').textContent = S.rate==='normal' ? '⏱ Débit : normal' : '🐢 Débit : lent';
   $('btn-sound-en').textContent = S.soundEn ? '🔊 Voix EN : activée' : '🔇 Voix EN : coupée';
   $('btn-sound-fr').textContent = S.soundFr ? '🔊 Voix FR : activée' : '🔇 Voix FR : coupée';
-  $('btn-mode').textContent = S.mode==='classic' ? '👁 Mode : Classique' : "👂 Mode : À l'oreille";
+  $('btn-mode').textContent = modeLabel();
   refreshLib(); show('lib');
 })();
 
@@ -802,6 +943,7 @@ window.addEventListener('beforeunload', ()=>{ try{ store.set(S); }catch(e){} });
     if (!t) return;
     const dx = t.clientX - x0, dy = t.clientY - y0;
     x0 = y0 = null;
+    if (S.mode==='flow') return;   // en continu, pas de balayage-jugement
     if (typeof revealed !== 'undefined' && revealed && Math.abs(dx) > 60 && Math.abs(dy) < 90){
       judge(dx > 0);
     }
